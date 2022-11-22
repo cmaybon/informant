@@ -6,6 +6,7 @@ use eframe::egui;
 use egui::*;
 use tracing_subscriber::util::SubscriberInitExt;
 use std::fs::File;
+use crate::workrave;
 
 const SETTINGS_FILENAME: &str = "settings.json";
 
@@ -16,7 +17,15 @@ pub struct Settings {
 }
 
 impl Settings {
-    fn settings_init(&mut self) {
+    pub fn default() -> Self {
+        let mut settings = Self {
+            workrave_historystats_path: None,
+        };
+        settings.init();
+        settings
+    }
+
+    fn init(&mut self) {
         match fs::File::open(SETTINGS_FILENAME) {
             Ok(_) => self.load_settings(),
             Err(_) => self.save_settings()
@@ -24,7 +33,7 @@ impl Settings {
     }
 
     fn load_settings(&mut self) -> io::Result<bool> {
-        return match fs::File::open(SETTINGS_FILENAME) {
+        match fs::File::open(SETTINGS_FILENAME) {
             Ok(mut file) => {
                 let mut contents = String::new();
                 file.read_to_string(&mut contents)?;
@@ -37,12 +46,12 @@ impl Settings {
                 self.save_settings();
                 Ok(false)
             },
-        };
+        }
     }
 
     fn save_settings(&self) -> io::Result<bool> {
         let serialised = serde_json::to_string(&self)?;
-        let mut valid_file = match fs::File::open(SETTINGS_FILENAME) {
+        match fs::File::open(SETTINGS_FILENAME) {
             Ok(file) => file,
             Err(error) => match error.kind() {
                 ErrorKind::NotFound => match fs::File::create(SETTINGS_FILENAME) {
@@ -55,9 +64,9 @@ impl Settings {
             }
         };
 
-        match valid_file.write(serialised.as_bytes()) {
+        match fs::write(SETTINGS_FILENAME, serialised.as_bytes()) {
             Ok(_) => Ok(true),
-            Err(error) => panic!("Failed to write settings: {:?}", error),
+            Err(error) => panic!("Failed to write settings to file: {:?}", error)
         }
     }
 }
@@ -67,23 +76,6 @@ pub struct SettingsTab {
 }
 
 impl SettingsTab {
-    // fn workrave_stats_path_is_valid(&mut self, path: &Path) -> bool {
-    //     if let Ok(lines) = Settings::get_file_lines(&path) {
-    //         for line in lines {
-    //             if line.unwrap() == "WorkRaveStats 4" {
-    //                 return true;
-    //             }
-    //             break;
-    //         }
-    //     }
-    //     false
-    // }
-    //
-    // fn get_file_lines<P>(path: P) -> io::Result<io::Lines<io::BufReader<File>>> where P: AsRef<Path> {
-    //     let file = File::open(path)?;
-    //     Ok(io::BufReader::new(file).lines())
-    // }
-
     pub fn ui(&mut self, ui: &mut Ui) {
         ui.vertical(|ui| {
             ui.heading(RichText::new("Workrave"));
@@ -97,14 +89,17 @@ impl SettingsTab {
                 }
 
                 if ui.button("Set").clicked() {
-                    // if let Some(path) = rfd::FileDialog::new()
-                    //     .set_title(format!("Select a Workrave \"{}\" file", WORKRAVE_HISTORYSTATS_FILENAME).as_str())
-                    //     .set_file_name(WORKRAVE_HISTORYSTATS_FILENAME)
-                    //     .pick_file() {
-                    //     if self.workrave_stats_path_is_valid(&path) {
-                    //         self.workrave_stats_path = Some(path.display().to_string());
-                    //     }
-                    // }
+                    if let Some(path) = rfd::FileDialog::new()
+                        .set_title(format!("Select a Workrave \"{}\" file", workrave::WORKRAVE_HISTORYSTATS_FILENAME).as_str())
+                        .set_file_name(workrave::WORKRAVE_HISTORYSTATS_FILENAME.as_str())
+                        .pick_file() {
+                        let path = path.display().to_string();
+                        if workrave::WorkraveHistory::is_file_valid(&path) {
+                            self.settings.workrave_historystats_path = Some(path);
+                        } else {
+                            self.settings.workrave_historystats_path = None;
+                        }
+                    }
                 }
             });
             if ui.button("Save settings").clicked() {

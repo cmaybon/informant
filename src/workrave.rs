@@ -1,7 +1,9 @@
 use chrono::prelude::*;
 use std::collections::HashMap;
 use std::fs;
-use std::io::{BufReader, BufRead};
+use std::io::{BufReader, BufRead, Error};
+
+pub const WORKRAVE_HISTORYSTATS_FILENAME: &str = "historystats";
 
 pub struct WorkraveDay {
     datetime_range: DatetimeRange,
@@ -74,11 +76,30 @@ pub struct WorkraveHistory {
 }
 
 impl WorkraveHistory {
-    fn is_file_valid(path: &str) -> Option<bool>{
-        // error handling opening file
-        // read first line
-        // if first line is expected, return true
-        Some(false)
+    pub fn is_file_valid(path: &str) -> bool {
+        match fs::File::open(&path) {
+            Ok(file) => {
+                match BufReader::new(file).lines().next() {
+                    Some(line_result) => {
+                        match line_result {
+                            Ok(line) => {
+                                if line == "WorkRaveStats 4" {
+                                    true
+                                } else {
+                                    false
+                                }
+                            }
+                            Err(_) => false,
+                        }
+                    }
+                    None => false
+                }
+            }
+            Err(error) => {
+                println!("Failed to open file, defaulting to invalid");
+                false
+            }
+        }
     }
 
     fn load_historystats_file(file: &fs::File) -> WorkraveHistory {
@@ -111,7 +132,7 @@ impl WorkraveHistory {
 
         let mut days = HashMap::new();
         for (i, date) in dates.iter().enumerate() {
-            days.insert(date.start,WorkraveDay::build_day(input_stats[i], *date));
+            days.insert(date.start, WorkraveDay::build_day(input_stats[i], *date));
         }
         WorkraveHistory {
             days

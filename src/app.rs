@@ -23,9 +23,7 @@ impl Default for Informant {
                 current_day: None,
             },
             settings_tab: settings::SettingsTab {
-                settings: settings::Settings {
-                    workrave_historystats_path: Some("./historystats".to_string()),
-                }
+                settings: settings::Settings::default()
             },
         }
     }
