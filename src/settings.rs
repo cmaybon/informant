@@ -1,10 +1,11 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
-use std::io::{ErrorKind, Write};
+use std::io::{ErrorKind, Write, Read, Error};
 use eframe::egui;
 use egui::*;
 use tracing_subscriber::util::SubscriberInitExt;
+use std::fs::File;
 
 const SETTINGS_FILENAME: &str = "settings.json";
 
@@ -15,24 +16,26 @@ pub struct Settings {
 }
 
 impl Settings {
-    fn settings_init(&self) {
-        // see if settings file exists
-        // exists
-        //      read and set fields
-        // else
-        self.save_settings();
+    fn settings_init(&mut self) {
+        match fs::File::open(SETTINGS_FILENAME) {
+            Ok(_) => self.load_settings(),
+            Err(_) => self.save_settings()
+        };
     }
 
-    fn load_settings(&mut self) {
-        match fs::File::open(SETTINGS_FILENAME) {
-            Ok(file) => {
-                // read
-                // set fields
+    fn load_settings(&mut self) -> io::Result<bool> {
+        return match fs::File::open(SETTINGS_FILENAME) {
+            Ok(mut file) => {
+                let mut contents = String::new();
+                file.read_to_string(&mut contents)?;
+                let settings: Settings = serde_json::from_str(&contents)?;
+                self.workrave_historystats_path = settings.workrave_historystats_path;
+                Ok(true)
             },
-            Err(error ) => {
+            Err(error) => {
                 println!("No existing settings file, saving current settings...");
                 self.save_settings();
-                return
+                Ok(false)
             },
         };
     }
@@ -108,6 +111,10 @@ impl SettingsTab {
                 println!("Saving settings...");
                 self.settings.save_settings();
             };
+            if ui.button("Load settings").clicked() {
+                println!("Loading settings...");
+                self.settings.load_settings();
+            }
         });
     }
 }
