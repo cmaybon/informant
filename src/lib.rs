@@ -1,4 +1,5 @@
 mod app;
-use app::Informant;
+pub use app::Informant;
 mod workrave;
 mod settings;
+mod stats;
