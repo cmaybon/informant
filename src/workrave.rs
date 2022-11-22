@@ -5,25 +5,26 @@ use std::io::{BufReader, BufRead, Error};
 
 pub const WORKRAVE_HISTORYSTATS_FILENAME: &str = "historystats";
 
+#[derive(Debug)]
 pub struct WorkraveDay {
-    datetime_range: DatetimeRange,
-    stats: InputStats,
+    pub datetime_range: DatetimeRange,
+    pub stats: InputStats,
 }
 
 #[derive(PartialEq, Debug, Copy, Clone)]
-struct DatetimeRange {
+pub struct DatetimeRange {
     start: DateTime<Local>,
     end: DateTime<Local>,
 }
 
 #[derive(PartialEq, Debug, Copy, Clone)]
-struct InputStats {
-    total_active_time_seconds: u64,
-    total_mouse_movement: u64,
-    total_click_movement: u64,
-    total_movement_time: u64,
-    total_clicks: u64,
-    total_keystrokes: u64,
+pub struct InputStats {
+    pub total_active_time_seconds: u64,
+    pub total_mouse_movement: u64,
+    pub total_click_movement: u64,
+    pub total_movement_time: u64,
+    pub total_clicks: u64,
+    pub total_keystrokes: u64,
 }
 
 impl WorkraveDay {
@@ -71,8 +72,9 @@ impl WorkraveDay {
     }
 }
 
+#[derive(Debug)]
 pub struct WorkraveHistory {
-    days: HashMap<DateTime<Local>, WorkraveDay>,
+    pub days: HashMap<DateTime<Local>, WorkraveDay>,
 }
 
 impl WorkraveHistory {
@@ -102,7 +104,7 @@ impl WorkraveHistory {
         }
     }
 
-    fn load_historystats_file(file: &fs::File) -> WorkraveHistory {
+    pub fn load_historystats_file(file: &fs::File) -> WorkraveHistory {
         let reader = BufReader::new(file);
 
         let mut dates: Vec<DatetimeRange> = vec![];
