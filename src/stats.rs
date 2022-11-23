@@ -5,6 +5,7 @@ use plot::{Plot, Line, PlotPoints, PlotPoint, Legend};
 use crate::workrave::{WorkraveHistory, WorkraveDay};
 use chrono::{NaiveDate, Datelike};
 use std::ops::RangeInclusive;
+use egui::plot::Polygon;
 
 pub struct StatsTab {
     pub current_day: Option<workrave::WorkraveDay>,
@@ -12,19 +13,39 @@ pub struct StatsTab {
 
 impl StatsTab {
     pub fn ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>) -> Response{
+        ui.vertical(|ui| {
+            self.plot_ui(ui, workrave_history);
+            ui.label("testing");
+            ui.label("testing");
+            ui.label("testing");
+            ui.label("testing");
+            // ui.horizontal(|ui| {
+            //    ui.vertical(|ui| {
+            //        ui.label("Left");
+            //    });
+            //     ui.vertical(|ui| {
+            //         ui.label("Right");
+            //     });
+            // });
+        }).response
+    }
+
+    fn plot_ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>) -> Response {
         let mut plot = Plot::new("testing")
             .include_y(0.0)
             .allow_boxed_zoom(false)
             .allow_drag(true)
             .label_formatter(StatsTab::label_formatter)
             .x_axis_formatter(StatsTab::x_axis_formatter)
-            .legend(Legend::default());
+            .legend(Legend::default())
+            .height(500.0);
         plot.show(ui, |plot_ui| {
             match workrave_history {
                 Some(history) => {
                     for line in StatsTab::get_lines_from_history(&history) {
                         plot_ui.line(line);
                     }
+                    plot_ui.polygon(StatsTab::create_polygon());
                 },
                 None => {}
             }
@@ -65,6 +86,14 @@ impl StatsTab {
             }
         };
         StatsTab::naive_date_to_string(&date)
+    }
+
+    fn create_polygon() -> Polygon {
+        Polygon::new(PlotPoints::new(vec![
+            [738436.0 + 7.5, 10000.0], // Top left
+            [738437.0 + 7.5, 10000.0], // Top right
+            [738437.0 + 7.5, 0.0],      // Bottom right
+            [738436.0 + 7.5, 0.0]]))    // Bottom left
     }
 
     fn get_lines_from_history(history: &workrave::WorkraveHistory) -> Vec<Line> {

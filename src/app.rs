@@ -5,6 +5,7 @@ use std::fs;
 use crate::workrave;
 use crate::stats;
 use crate::settings;
+use std::collections::BTreeMap;
 
 const WORKRAVE_HISTORYSTATS_FILENAME: &str = "historystats";
 
@@ -33,6 +34,11 @@ impl Informant {
             }
         }
     }
+
+    fn top_panel_style() -> BTreeMap<TextStyle, FontId>{
+        return [(egui::TextStyle::Button,
+                 egui::FontId::new(24.0, egui::FontFamily::Proportional))].into()
+    }
 }
 
 impl Default for Informant {
@@ -58,9 +64,13 @@ enum Tab {
 }
 
 impl eframe::App for Informant {
+
+
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
-        egui::TopBottomPanel::top("top_panel").min_height(75.0).show(ctx, |ui| {
+        egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
+                ui.style_mut().text_styles = Informant::top_panel_style();
+
                 ui.selectable_value(&mut self.current_tab, Tab::Stats, "Stats");
                 ui.selectable_value(&mut self.current_tab, Tab::Analytics, "Analytics");
                 ui.selectable_value(&mut self.current_tab, Tab::Settings, "Settings");
@@ -82,5 +92,8 @@ impl eframe::App for Informant {
                 }
             }
         });
+        // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
+        //     ui.heading("bottom panel");
+        // });
     }
 }
