@@ -37,7 +37,8 @@ impl Informant {
 
     fn top_panel_style() -> BTreeMap<TextStyle, FontId>{
         return [(egui::TextStyle::Button,
-                 egui::FontId::new(24.0, egui::FontFamily::Proportional))].into()
+                 egui::FontId::new(24.0, egui::FontFamily::Proportional))]
+            .into()
     }
 }
 

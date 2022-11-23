@@ -9,7 +9,7 @@ fn main() {
 
     let mut options = eframe::NativeOptions::default();
     options.min_window_size = Some(Vec2::new(1600.0, 900.0));
-    options.resizable = false;
+    // options.resizable = false;
     eframe::run_native(
         "Informant",
         options,

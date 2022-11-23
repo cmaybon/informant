@@ -12,20 +12,44 @@ pub struct StatsTab {
 }
 
 impl StatsTab {
-    pub fn ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>) -> Response{
+    pub fn ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>) -> Response {
         ui.vertical(|ui| {
-            self.plot_ui(ui, workrave_history);
-            ui.label("testing");
-            ui.label("testing");
-            ui.label("testing");
-            ui.label("testing");
-            // ui.horizontal(|ui| {
-            //    ui.vertical(|ui| {
-            //        ui.label("Left");
-            //    });
-            //     ui.vertical(|ui| {
-            //         ui.label("Right");
-            //     });
+            // Date picker
+            ui.label("Current Day: ");
+
+            let history = match workrave_history {
+                Some(data) => data,
+                None => {
+                    self.no_history_data_ui(ui);
+                    return
+                },
+            };
+
+            let day: &WorkraveDay = history.days.get(&NaiveDate::from_num_days_from_ce_opt(738436 + 7).unwrap()).unwrap();
+
+            let mut key_stats_collapsing = ui.collapsing("Key Stats", |ui| {
+                self.plot_ui(ui, workrave_history);
+            });
+            key_stats_collapsing.openness = 1.0;
+
+            ui.vertical_centered(|ui| {
+                ui.heading("Current Day's Stats");
+                ui.separator();
+                ui.label(format!("Total active time: {}", day.stats.total_active_time_seconds));
+                ui.label(format!("Total mouse movement: {}", day.stats.total_mouse_movement));
+                ui.label(format!("Total click mouse movement: {}", day.stats.total_mouse_click_movement));
+                ui.label(format!("Total mouse time: {}", day.stats.total_mouse_movement_time));
+                ui.label(format!("Total mouse clicks: {}", day.stats.total_mouse_clicks));
+                ui.label(format!("Total keystrokes: {}", day.stats.total_keystrokes));
+            });
+
+        }).response
+    }
+
+    fn no_history_data_ui(&mut self, ui: &mut Ui) -> Response {
+        ui.vertical_centered(|ui| {
+            // ui.horizontal_centered(|ui| {
+               ui.heading("\n\n\n\n\n\n\n\n\n\n\n\nNo history data loaded");
             // });
         }).response
     }
@@ -40,13 +64,21 @@ impl StatsTab {
             .legend(Legend::default())
             .height(500.0);
         plot.show(ui, |plot_ui| {
+            // TODO use similar to handle changing selected day
+            if plot_ui.plot_clicked() {
+                match plot_ui.pointer_coordinate() {
+                    Some(value) => println!("{}, {}", value.x, value.y),
+                    None => (),
+                }
+            }
+
             match workrave_history {
                 Some(history) => {
                     for line in StatsTab::get_lines_from_history(&history) {
                         plot_ui.line(line);
                     }
                     plot_ui.polygon(StatsTab::create_polygon());
-                },
+                }
                 None => {}
             }
         }).response
@@ -63,7 +95,7 @@ impl StatsTab {
         let date = match NaiveDate::from_num_days_from_ce_opt(plot_point.x as i32) {
             Some(value) => value,
             None => {
-                return format!("DATE ERR")
+                return format!("DATE ERR");
             }
         };
 
@@ -82,7 +114,7 @@ impl StatsTab {
         let date = match NaiveDate::from_num_days_from_ce_opt(x as i32) {
             Some(value) => value,
             None => {
-                return format!("DATE ERR")
+                return format!("DATE ERR");
             }
         };
         StatsTab::naive_date_to_string(&date)
@@ -117,6 +149,6 @@ impl StatsTab {
         }
 
         vec![Line::new(PlotPoints::new(total_keystrokes)).name("Keystrokes").fill(0.0),
-            Line::new(PlotPoints::new(total_mouse_clicks)).name("Mouse Clicks").fill(0.0)]
+             Line::new(PlotPoints::new(total_mouse_clicks)).name("Mouse Clicks").fill(0.0)]
     }
 }
