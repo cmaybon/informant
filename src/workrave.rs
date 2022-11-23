@@ -21,9 +21,9 @@ pub struct DatetimeRange {
 pub struct InputStats {
     pub total_active_time_seconds: u64,
     pub total_mouse_movement: u64,
-    pub total_click_movement: u64,
-    pub total_movement_time: u64,
-    pub total_clicks: u64,
+    pub total_mouse_click_movement: u64,
+    pub total_mouse_movement_time: u64,
+    pub total_mouse_clicks: u64,
     pub total_keystrokes: u64,
 }
 
@@ -57,9 +57,9 @@ impl WorkraveDay {
         InputStats {
             total_active_time_seconds: split_parsed[1],
             total_mouse_movement: split_parsed[2],
-            total_click_movement: split_parsed[3],
-            total_movement_time: split_parsed[4],
-            total_clicks: split_parsed[5],
+            total_mouse_click_movement: split_parsed[3],
+            total_mouse_movement_time: split_parsed[4],
+            total_mouse_clicks: split_parsed[5],
             total_keystrokes: split_parsed[6],
         }
     }
@@ -74,7 +74,7 @@ impl WorkraveDay {
 
 #[derive(Debug)]
 pub struct WorkraveHistory {
-    pub days: HashMap<DateTime<Local>, WorkraveDay>,
+    pub days: HashMap<NaiveDate, WorkraveDay>,
 }
 
 impl WorkraveHistory {
@@ -132,9 +132,9 @@ impl WorkraveHistory {
             panic!("historystats file is unreadable, date and stat lines are not equal");
         }
 
-        let mut days = HashMap::new();
+        let mut days: HashMap<NaiveDate, WorkraveDay> = HashMap::new();
         for (i, date) in dates.iter().enumerate() {
-            days.insert(date.start, WorkraveDay::build_day(input_stats[i], *date));
+            days.insert(date.start.date_naive(), WorkraveDay::build_day(input_stats[i], *date));
         }
         WorkraveHistory {
             days
@@ -166,9 +166,9 @@ mod tests {
         let stats = InputStats {
             total_active_time_seconds: 338,
             total_mouse_movement: 28584,
-            total_click_movement: 40231,
-            total_movement_time: 29,
-            total_clicks: 104,
+            total_mouse_click_movement: 40231,
+            total_mouse_movement_time: 29,
+            total_mouse_clicks: 104,
             total_keystrokes: 33,
         };
 
