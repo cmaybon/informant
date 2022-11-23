@@ -4,6 +4,7 @@ use egui::*;
 use plot::{Plot, Line, PlotPoints, PlotPoint, Legend};
 use crate::workrave::{WorkraveHistory, WorkraveDay};
 use chrono::{NaiveDate, Datelike};
+use std::ops::RangeInclusive;
 
 pub struct StatsTab {
     pub current_day: Option<workrave::WorkraveDay>,
@@ -16,6 +17,7 @@ impl StatsTab {
             .allow_boxed_zoom(false)
             .allow_drag(true)
             .label_formatter(StatsTab::label_formatter)
+            .x_axis_formatter(StatsTab::x_axis_formatter)
             .legend(Legend::default());
         plot.show(ui, |plot_ui| {
             match workrave_history {
@@ -29,6 +31,13 @@ impl StatsTab {
         }).response
     }
 
+    fn naive_date_to_string(date: &NaiveDate) -> String {
+        format!("{}-{}-{}",
+                date.day(),
+                date.month(),
+                date.year())
+    }
+
     fn label_formatter(plot_points_name: &str, plot_point: &PlotPoint) -> String {
         let date = match NaiveDate::from_num_days_from_ce_opt(plot_point.x as i32) {
             Some(value) => value,
@@ -37,12 +46,25 @@ impl StatsTab {
             }
         };
 
-        format!("{}\nDate:  {}-{}-{}\nValue: {}",
-                plot_points_name,
-                date.day(),
-                date.month(),
-                date.year(),
-                plot_point.y)
+        let date = "Date:     ".to_owned() + &StatsTab::naive_date_to_string(&date);
+        if plot_points_name.is_empty() {
+            date
+        } else {
+            format!("{}\n{}\nValue:    {}",
+                    plot_points_name,
+                    date,
+                    plot_point.y)
+        }
+    }
+
+    fn x_axis_formatter(x: f64, range: &RangeInclusive<f64>) -> String {
+        let date = match NaiveDate::from_num_days_from_ce_opt(x as i32) {
+            Some(value) => value,
+            None => {
+                return format!("DATE ERR")
+            }
+        };
+        StatsTab::naive_date_to_string(&date)
     }
 
     fn get_lines_from_history(history: &workrave::WorkraveHistory) -> Vec<Line> {
