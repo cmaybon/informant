@@ -1,7 +1,7 @@
 use crate::{workrave, Informant, settings};
 use eframe::egui;
 use egui::*;
-use plot::{Plot, Line, PlotPoints, PlotPoint, Legend};
+use plot::{Plot, Line, PlotPoints, PlotPoint, Legend, Bar, BarChart};
 use crate::workrave::{WorkraveHistory, WorkraveDay};
 use chrono::{NaiveDate, Datelike};
 use std::ops::RangeInclusive;
@@ -11,27 +11,64 @@ pub struct StatsTab {
     pub current_day: Option<workrave::WorkraveDay>,
 }
 
-impl StatsTab {
-    pub fn ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>) -> Response {
-        ui.vertical(|ui| {
-            // Date picker
-            ui.label("Current Day: ");
+struct PlotData {
+    key_strokes: Vec<BarChart>,
+    mouse_movement: Vec<BarChart>,
+    activity_time: Vec<BarChart>,
+}
 
+impl StatsTab {
+    pub fn ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>, frame: &eframe::Frame) -> Response {
+        ui.vertical(|ui| {
             let history = match workrave_history {
                 Some(data) => data,
                 None => {
                     self.no_history_data_ui(ui);
-                    return
-                },
+                    return;
+                }
             };
 
-            let day: &WorkraveDay = history.days.get(&NaiveDate::from_num_days_from_ce_opt(738436 + 7).unwrap()).unwrap();
+            ui.vertical(|ui| {
+                let plot_width = frame.info().window_info.size.x;
+                let small_plot_width = &plot_width * 0.5;
+                let plot_data = StatsTab::build_plot_data(&history);
 
-            let mut key_stats_collapsing = ui.collapsing("Key Stats", |ui| {
-                self.plot_ui(ui, workrave_history);
+                let mut keystrokes_plot = Plot::new("keystrokes_plot").height(500.0).width(plot_width);
+                keystrokes_plot = StatsTab::configure_plot_settings(keystrokes_plot);
+                keystrokes_plot.show(ui, |plot_ui| {
+                    for chart in plot_data.key_strokes {
+                        plot_ui.bar_chart(chart);
+                    }
+
+                    // TODO use similar to handle changing selected day
+                    // if plot_ui.plot_clicked() {
+                    //     match plot_ui.pointer_coordinate() {
+                    //         Some(value) => println!("{}, {}", value.x, value.y),
+                    //         None => (),
+                    //     }
+                    // }
+                });
+
+                ui.horizontal(|ui| {
+                    let mut movement_plot = Plot::new("movement_plot").height(300.0).width(small_plot_width);
+                    movement_plot = StatsTab::configure_plot_settings(movement_plot);
+                    movement_plot.show(ui, |plot_ui| {
+                        for chart in plot_data.mouse_movement {
+                            plot_ui.bar_chart(chart);
+                        }
+                    });
+
+                    let mut time_plot = Plot::new("time_plot").height(300.0).width(small_plot_width);
+                    time_plot = StatsTab::configure_plot_settings(time_plot);
+                    time_plot.show(ui, |plot_ui| {
+                        for chart in plot_data.activity_time {
+                            plot_ui.bar_chart(chart);
+                        }
+                    });
+                });
             });
-            key_stats_collapsing.openness = 1.0;
 
+            let day: &WorkraveDay = history.days.get(&NaiveDate::from_num_days_from_ce_opt(738436 + 7).unwrap()).unwrap();
             ui.vertical_centered(|ui| {
                 ui.heading("Current Day's Stats");
                 ui.separator();
@@ -42,53 +79,85 @@ impl StatsTab {
                 ui.label(format!("Total mouse clicks: {}", day.stats.total_mouse_clicks));
                 ui.label(format!("Total keystrokes: {}", day.stats.total_keystrokes));
             });
-
         }).response
     }
 
     fn no_history_data_ui(&mut self, ui: &mut Ui) -> Response {
         ui.vertical_centered(|ui| {
-            // ui.horizontal_centered(|ui| {
-               ui.heading("\n\n\n\n\n\n\n\n\n\n\n\nNo history data loaded");
-            // });
+            ui.heading("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo history data loaded");
         }).response
     }
 
-    fn plot_ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>) -> Response {
-        let mut plot = Plot::new("testing")
-            .include_y(0.0)
+    fn build_plot_data(history: &workrave::WorkraveHistory) -> PlotData {
+        fn create_line(data: Vec<[f64; 2]>, name: &str) -> Line {
+            Line::new(PlotPoints::new(data)).name(name).fill(0.0)
+        }
+
+        fn create_bar_chart(bars: Vec<Bar>, name: &str, stacked_on: Option<&BarChart>) -> BarChart {
+            let mut chart = BarChart::new(bars).name(name);
+            match stacked_on {
+                Some(s) => {
+                    chart.stack_on(&[s])
+                }
+                None => {
+                    chart
+                }
+            }
+        }
+
+        let mut total_keystrokes: Vec<Bar> = vec![];
+        let mut total_mouse_clicks: Vec<Bar> = vec![];
+        let mut total_movement: Vec<Bar> = vec![];
+        let mut total_click_movement: Vec<Bar> = vec![];
+        let mut total_active_time: Vec<Bar> = vec![];
+        let mut total_mouse_time: Vec<Bar> = vec![];
+
+        let sorted_dates = StatsTab::get_sorted_dates(history);
+        for date in sorted_dates {
+            match history.days.get(date) {
+                Some(day) => {
+                    let x = date.num_days_from_ce() as f64;
+                    let stats = &day.stats;
+                    total_keystrokes.push(Bar::new(x, stats.total_keystrokes as f64));
+                    total_mouse_clicks.push(Bar::new(x, stats.total_mouse_clicks as f64));
+                    total_movement.push(Bar::new(x, stats.total_mouse_movement as f64));
+                    total_click_movement.push(Bar::new(x, stats.total_mouse_click_movement as f64));
+                    total_active_time.push(Bar::new(x, stats.total_active_time_seconds as f64));
+                    total_mouse_time.push(Bar::new(x, stats.total_mouse_movement_time as f64));
+                }
+                None => continue
+            }
+        };
+
+        let mouse_clicks_chart = create_bar_chart(total_mouse_clicks, "Mouse Clicks", None);
+        let keystrokes_chart = create_bar_chart(total_keystrokes, "Keystrokes", Some(&mouse_clicks_chart));
+
+        let movement_chart = create_bar_chart(total_movement, "Movement", None);
+        let click_movement_chart = create_bar_chart(total_click_movement, "Click Movement", Some(&movement_chart));
+
+        let active_time_chart = create_bar_chart(total_active_time, "Active Time", None);
+        let mouse_time_chart = create_bar_chart(total_mouse_time, "Mouse Time", Some(&active_time_chart));
+
+        PlotData {
+            key_strokes: vec![mouse_clicks_chart, keystrokes_chart],
+            mouse_movement: vec![movement_chart, click_movement_chart],
+            activity_time: vec![active_time_chart, mouse_time_chart],
+        }
+    }
+
+    fn get_sorted_dates(history: &workrave::WorkraveHistory) -> Vec<&NaiveDate> {
+        let mut sorted_dates: Vec<&NaiveDate> = history.days.keys().clone().collect();
+        sorted_dates.sort();
+        sorted_dates
+    }
+
+    fn configure_plot_settings(plot: Plot) -> Plot {
+        plot.include_y(0.0)
             .allow_boxed_zoom(false)
             .allow_drag(true)
-            .label_formatter(StatsTab::label_formatter)
             .x_axis_formatter(StatsTab::x_axis_formatter)
+            .label_formatter(StatsTab::label_formatter)
             .legend(Legend::default())
-            .height(500.0);
-        plot.show(ui, |plot_ui| {
-            // TODO use similar to handle changing selected day
-            if plot_ui.plot_clicked() {
-                match plot_ui.pointer_coordinate() {
-                    Some(value) => println!("{}, {}", value.x, value.y),
-                    None => (),
-                }
-            }
-
-            match workrave_history {
-                Some(history) => {
-                    for line in StatsTab::get_lines_from_history(&history) {
-                        plot_ui.line(line);
-                    }
-                    plot_ui.polygon(StatsTab::create_polygon());
-                }
-                None => {}
-            }
-        }).response
-    }
-
-    fn naive_date_to_string(date: &NaiveDate) -> String {
-        format!("{}-{}-{}",
-                date.day(),
-                date.month(),
-                date.year())
     }
 
     fn label_formatter(plot_points_name: &str, plot_point: &PlotPoint) -> String {
@@ -120,35 +189,18 @@ impl StatsTab {
         StatsTab::naive_date_to_string(&date)
     }
 
+    fn naive_date_to_string(date: &NaiveDate) -> String {
+        format!("{}-{}-{}",
+                date.day(),
+                date.month(),
+                date.year())
+    }
+
     fn create_polygon() -> Polygon {
         Polygon::new(PlotPoints::new(vec![
             [738436.0 + 7.5, 10000.0], // Top left
             [738437.0 + 7.5, 10000.0], // Top right
             [738437.0 + 7.5, 0.0],      // Bottom right
             [738436.0 + 7.5, 0.0]]))    // Bottom left
-    }
-
-    fn get_lines_from_history(history: &workrave::WorkraveHistory) -> Vec<Line> {
-        let mut total_keystrokes: Vec<[f64; 2]> = vec![];
-        let mut total_mouse_clicks: Vec<[f64; 2]> = vec![];
-
-        let mut sort_dates: Vec<&NaiveDate> = history.days.keys().clone().collect();
-        sort_dates.sort();
-
-        for (i, date) in sort_dates.iter().enumerate() {
-            let valid_day = match history.days.get(date) {
-                Some(day) => day,
-                None => {
-                    total_keystrokes.push([date.num_days_from_ce() as f64, 0.0]);
-                    total_mouse_clicks.push([date.num_days_from_ce() as f64, 0.0]);
-                    continue;
-                }
-            };
-            total_keystrokes.push([date.num_days_from_ce() as f64, valid_day.stats.total_keystrokes as f64]);
-            total_mouse_clicks.push([date.num_days_from_ce() as f64, valid_day.stats.total_mouse_clicks as f64]);
-        }
-
-        vec![Line::new(PlotPoints::new(total_keystrokes)).name("Keystrokes").fill(0.0),
-             Line::new(PlotPoints::new(total_mouse_clicks)).name("Mouse Clicks").fill(0.0)]
     }
 }

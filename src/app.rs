@@ -67,7 +67,7 @@ enum Tab {
 impl eframe::App for Informant {
 
 
-    fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
+    fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.style_mut().text_styles = Informant::top_panel_style();
@@ -85,7 +85,7 @@ impl eframe::App for Informant {
         egui::CentralPanel::default().show(ctx, |ui| {
             match self.current_tab {
                 Tab::Stats => {
-                    self.stats_tab.ui(ui, &self.workrave_history);
+                    self.stats_tab.ui(ui, &self.workrave_history, &frame);
                 }
                 Tab::Analytics => {}
                 Tab::Settings => {
