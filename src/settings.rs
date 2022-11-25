@@ -6,10 +6,11 @@ use eframe::egui;
 use egui::*;
 use tracing_subscriber::util::SubscriberInitExt;
 use std::fs::File;
+use whoami;
 use crate::workrave;
 
-const SETTINGS_FILENAME: &str = "settings.json";
 
+const SETTINGS_FILENAME: &str = "settings.json";
 
 #[derive(Serialize, Deserialize, Debug)]
 pub struct Settings {
@@ -28,7 +29,11 @@ impl Settings {
     fn init(&mut self) {
         match fs::File::open(SETTINGS_FILENAME) {
             Ok(_) => self.load_settings(),
-            Err(_) => self.save_settings()
+            Err(_) =>  {
+                println!("No settings file found");
+                self.workrave_historystats_path = Settings::try_workrave_appdata_path();
+                self.save_settings()
+            }
         };
     }
 
@@ -49,13 +54,27 @@ impl Settings {
         }
     }
 
+    fn try_workrave_appdata_path() -> Option<String> {
+        println!("Looking for historystats in default AppData path...");
+        let path = format!("C:\\Users\\{}\\AppData\\Roaming\\Workrave\\historystats", whoami::username());
+        if workrave::WorkraveHistory::is_file_valid(&path) {
+            println!("Found");
+            Some(path)
+        } else {
+            None
+        }
+    }
+
     fn save_settings(&self) -> io::Result<bool> {
         let serialised = serde_json::to_string(&self)?;
         match fs::File::open(SETTINGS_FILENAME) {
             Ok(file) => file,
             Err(error) => match error.kind() {
                 ErrorKind::NotFound => match fs::File::create(SETTINGS_FILENAME) {
-                    Ok(new_file) => new_file,
+                    Ok(new_file) => {
+                        println!("Settings file created");
+                        new_file
+                    },
                     Err(e) => panic!("Unknown failure when creating settings file: {:?}", e)
                 },
                 other_error=> {

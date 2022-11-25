@@ -27,11 +27,8 @@ impl Informant {
 
                 let history_data = workrave::WorkraveHistory::load_historystats_file(&valid_file);
                 self.workrave_history = Some(history_data);
-                println!("{:#?}", self.workrave_history);
             }
-            None => {
-                println!("No path to historystats");
-            }
+            None => ()
         }
     }
 
@@ -60,20 +57,16 @@ impl Default for Informant {
 #[derive(PartialEq, Eq)]
 enum Tab {
     Stats,
-    Analytics,
     Settings,
 }
 
 impl eframe::App for Informant {
-
-
     fn update(&mut self, ctx: &egui::Context, frame: &mut eframe::Frame) {
         egui::TopBottomPanel::top("top_panel").show(ctx, |ui| {
             ui.horizontal(|ui| {
                 ui.style_mut().text_styles = Informant::top_panel_style();
 
                 ui.selectable_value(&mut self.current_tab, Tab::Stats, "Stats");
-                ui.selectable_value(&mut self.current_tab, Tab::Analytics, "Analytics");
                 ui.selectable_value(&mut self.current_tab, Tab::Settings, "Settings");
                 ui.separator();
                 if ui.button("Load Stats").clicked() {
@@ -87,14 +80,10 @@ impl eframe::App for Informant {
                 Tab::Stats => {
                     self.stats_tab.ui(ui, &self.workrave_history, &frame);
                 }
-                Tab::Analytics => {}
                 Tab::Settings => {
                     self.settings_tab.ui(ui);
                 }
             }
         });
-        // egui::TopBottomPanel::bottom("bottom_panel").show(ctx, |ui| {
-        //     ui.heading("bottom panel");
-        // });
     }
 }
