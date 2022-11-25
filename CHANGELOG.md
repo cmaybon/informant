@@ -2,6 +2,6 @@
 ## Features
 - When no `historystats` path is set attempts to use `C:\Users\<username>\AppData\Roaming\Workrave`
 - `historystats` is loaded on launch
-## Fixes
 
 ## Changes
+- Fixed all compiler warnings

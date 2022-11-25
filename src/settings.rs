@@ -1,11 +1,9 @@
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io;
-use std::io::{ErrorKind, Write, Read, Error};
+use std::io::{ErrorKind, Read};
 use eframe::egui;
 use egui::*;
-use tracing_subscriber::util::SubscriberInitExt;
-use std::fs::File;
 use whoami;
 use crate::workrave;
 
@@ -28,11 +26,13 @@ impl Settings {
 
     fn init(&mut self) {
         match fs::File::open(SETTINGS_FILENAME) {
-            Ok(_) => self.load_settings(),
-            Err(_) =>  {
+            Ok(_) => {
+                self.load_settings().unwrap();
+            },
+            Err(_) => {
                 println!("No settings file found");
                 self.workrave_historystats_path = Settings::try_workrave_appdata_path();
-                self.save_settings()
+                self.save_settings().unwrap();
             }
         };
     }
@@ -46,9 +46,14 @@ impl Settings {
                 self.workrave_historystats_path = settings.workrave_historystats_path;
                 Ok(true)
             },
-            Err(error) => {
+            Err(_) => {
                 println!("No existing settings file, saving current settings...");
-                self.save_settings();
+                match self.save_settings() {
+                    Ok(_) => println!("Successfully saved settings"),
+                    Err(error) => {
+                        println!("Failed to save settings: {:?}", error);
+                    }
+                };
                 Ok(false)
             },
         }
@@ -122,12 +127,10 @@ impl SettingsTab {
                 }
             });
             if ui.button("Save settings").clicked() {
-                println!("Saving settings...");
-                self.settings.save_settings();
+                self.settings.save_settings().unwrap();
             };
             if ui.button("Load settings").clicked() {
-                println!("Loading settings...");
-                self.settings.load_settings();
+                self.settings.load_settings().unwrap();
             }
         });
     }

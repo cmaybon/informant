@@ -1,11 +1,10 @@
-use crate::{workrave, Informant, settings};
+use crate::{workrave};
 use eframe::egui;
 use egui::*;
-use plot::{Plot, Line, PlotPoints, PlotPoint, Legend, Bar, BarChart};
-use crate::workrave::{WorkraveHistory, WorkraveDay};
-use chrono::{NaiveDate, Datelike, format};
+use plot::{Plot, PlotPoint, Legend, Bar, BarChart};
+use crate::workrave::{WorkraveDay};
+use chrono::{NaiveDate, Datelike};
 use std::ops::RangeInclusive;
-use egui::plot::Polygon;
 
 pub struct StatsTab {
     pub current_day: Option<workrave::WorkraveDay>,
@@ -102,10 +101,6 @@ impl StatsTab {
     }
 
     fn build_plot_data(history: &workrave::WorkraveHistory) -> PlotData {
-        fn create_line(data: Vec<[f64; 2]>, name: &str) -> Line {
-            Line::new(PlotPoints::new(data)).name(name).fill(0.0)
-        }
-
         fn create_bar_chart(bars: Vec<Bar>, name: &str, color: Color32, stacked_on: Option<&BarChart>, y_is_time: bool) -> BarChart {
             let chart = match y_is_time {
                 true => {
@@ -224,7 +219,7 @@ impl StatsTab {
         }
     }
 
-    fn box_chart_element_formatter(bar: &Bar, chart: &BarChart) -> String {
+    fn box_chart_element_formatter(bar: &Bar, _chart: &BarChart) -> String {
         let date = match NaiveDate::from_num_days_from_ce_opt(bar.argument as i32) {
             Some(value) => value,
             None => {
@@ -236,7 +231,7 @@ impl StatsTab {
         format!("{}\n{}\n{}", bar.name, date, bar.value)
     }
 
-    fn active_time_element_formatter(bar: &Bar, chart: &BarChart) -> String {
+    fn active_time_element_formatter(bar: &Bar, _chart: &BarChart) -> String {
         match NaiveDate::from_num_days_from_ce_opt(bar.argument as i32) {
             Some(date) => {
                 let date = "Date:     ".to_owned() + &StatsTab::naive_date_to_string(&date);
@@ -253,7 +248,7 @@ impl StatsTab {
         }
     }
 
-    fn x_axis_formatter(x: f64, range: &RangeInclusive<f64>) -> String {
+    fn x_axis_formatter(x: f64, _range: &RangeInclusive<f64>) -> String {
         let date = match NaiveDate::from_num_days_from_ce_opt(x as i32) {
             Some(value) => value,
             None => {
@@ -268,13 +263,5 @@ impl StatsTab {
                 date.day(),
                 date.month(),
                 date.year())
-    }
-
-    fn create_polygon() -> Polygon {
-        Polygon::new(PlotPoints::new(vec![
-            [738436.0 + 7.5, 10000.0], // Top left
-            [738437.0 + 7.5, 10000.0], // Top right
-            [738437.0 + 7.5, 0.0],      // Bottom right
-            [738436.0 + 7.5, 0.0]]))    // Bottom left
     }
 }

@@ -7,8 +7,6 @@ use crate::stats;
 use crate::settings;
 use std::collections::BTreeMap;
 
-const WORKRAVE_HISTORYSTATS_FILENAME: &str = "historystats";
-
 pub struct Informant {
     pub workrave_history: Option<workrave::WorkraveHistory>,
     current_tab: Tab,

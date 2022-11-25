@@ -1,7 +1,7 @@
 use chrono::prelude::*;
 use std::collections::HashMap;
 use std::fs;
-use std::io::{BufReader, BufRead, Error};
+use std::io::{BufReader, BufRead};
 
 pub const WORKRAVE_HISTORYSTATS_FILENAME: &str = "historystats";
 
@@ -97,7 +97,7 @@ impl WorkraveHistory {
                     None => false
                 }
             }
-            Err(error) => {
+            Err(_) => {
                 println!("Failed to open file, defaulting to invalid");
                 false
             }
