@@ -29,14 +29,18 @@ impl StatsTab {
             };
 
             ui.vertical(|ui| {
+                let link_axis_group = plot::LinkedAxisGroup::new(true, false);
+
                 let plot_width = frame.info().window_info.size.x - 15.0;
                 let small_plot_width = &plot_width * 0.5;
                 let plot_data = StatsTab::build_plot_data(&history);
 
                 let mut keystrokes_plot = Plot::new("keystrokes_plot")
-                    .height(500.0)
-                    .width(plot_width);
+                    .height(600.0)
+                    .width(plot_width)
+                    .link_axis(link_axis_group.clone());
                 keystrokes_plot = StatsTab::configure_plot_settings(keystrokes_plot);
+
                 keystrokes_plot.show(ui, |plot_ui| {
                     for chart in plot_data.key_strokes {
                         plot_ui.bar_chart(chart);
@@ -53,8 +57,9 @@ impl StatsTab {
 
                 ui.horizontal(|ui| {
                     let mut movement_plot = Plot::new("movement_plot")
-                        .height(300.0)
-                        .width(small_plot_width);
+                        .height(500.0)
+                        .width(small_plot_width)
+                        .link_axis(link_axis_group.clone());
                     movement_plot = StatsTab::configure_plot_settings(movement_plot);
                     movement_plot.show(ui, |plot_ui| {
                         for chart in plot_data.mouse_movement {
@@ -64,8 +69,9 @@ impl StatsTab {
 
                     let
                         mut time_plot = Plot::new("time_plot")
-                        .height(300.0)
-                        .width(small_plot_width);
+                        .height(500.0)
+                        .width(small_plot_width)
+                        .link_axis(link_axis_group.clone());
                     time_plot = StatsTab::configure_plot_settings(time_plot);
                     time_plot.show(ui, |plot_ui| {
                         for chart in plot_data.activity_time {
