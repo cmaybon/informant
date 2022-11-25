@@ -3,7 +3,7 @@ use eframe::egui;
 use egui::*;
 use plot::{Plot, Line, PlotPoints, PlotPoint, Legend, Bar, BarChart};
 use crate::workrave::{WorkraveHistory, WorkraveDay};
-use chrono::{NaiveDate, Datelike};
+use chrono::{NaiveDate, Datelike, format};
 use std::ops::RangeInclusive;
 use egui::plot::Polygon;
 
@@ -29,11 +29,13 @@ impl StatsTab {
             };
 
             ui.vertical(|ui| {
-                let plot_width = frame.info().window_info.size.x;
+                let plot_width = frame.info().window_info.size.x - 15.0;
                 let small_plot_width = &plot_width * 0.5;
                 let plot_data = StatsTab::build_plot_data(&history);
 
-                let mut keystrokes_plot = Plot::new("keystrokes_plot").height(500.0).width(plot_width);
+                let mut keystrokes_plot = Plot::new("keystrokes_plot")
+                    .height(500.0)
+                    .width(plot_width);
                 keystrokes_plot = StatsTab::configure_plot_settings(keystrokes_plot);
                 keystrokes_plot.show(ui, |plot_ui| {
                     for chart in plot_data.key_strokes {
@@ -50,7 +52,9 @@ impl StatsTab {
                 });
 
                 ui.horizontal(|ui| {
-                    let mut movement_plot = Plot::new("movement_plot").height(300.0).width(small_plot_width);
+                    let mut movement_plot = Plot::new("movement_plot")
+                        .height(300.0)
+                        .width(small_plot_width);
                     movement_plot = StatsTab::configure_plot_settings(movement_plot);
                     movement_plot.show(ui, |plot_ui| {
                         for chart in plot_data.mouse_movement {
@@ -58,7 +62,10 @@ impl StatsTab {
                         }
                     });
 
-                    let mut time_plot = Plot::new("time_plot").height(300.0).width(small_plot_width);
+                    let
+                        mut time_plot = Plot::new("time_plot")
+                        .height(300.0)
+                        .width(small_plot_width);
                     time_plot = StatsTab::configure_plot_settings(time_plot);
                     time_plot.show(ui, |plot_ui| {
                         for chart in plot_data.activity_time {
@@ -93,8 +100,16 @@ impl StatsTab {
             Line::new(PlotPoints::new(data)).name(name).fill(0.0)
         }
 
-        fn create_bar_chart(bars: Vec<Bar>, name: &str, stacked_on: Option<&BarChart>) -> BarChart {
-            let mut chart = BarChart::new(bars).name(name);
+        fn create_bar_chart(bars: Vec<Bar>, name: &str, color: Color32, stacked_on: Option<&BarChart>, y_is_time: bool) -> BarChart {
+            let chart = match y_is_time {
+                true => {
+                    BarChart::new(bars).name(name).color(color).element_formatter(Box::new(StatsTab::active_time_element_formatter))
+                },
+                false => {
+                    BarChart::new(bars).name(name).color(color).element_formatter(Box::new(StatsTab::box_chart_element_formatter))
+                }
+            };
+
             match stacked_on {
                 Some(s) => {
                     chart.stack_on(&[s])
@@ -118,25 +133,49 @@ impl StatsTab {
                 Some(day) => {
                     let x = date.num_days_from_ce() as f64;
                     let stats = &day.stats;
-                    total_keystrokes.push(Bar::new(x, stats.total_keystrokes as f64));
-                    total_mouse_clicks.push(Bar::new(x, stats.total_mouse_clicks as f64));
-                    total_movement.push(Bar::new(x, stats.total_mouse_movement as f64));
-                    total_click_movement.push(Bar::new(x, stats.total_mouse_click_movement as f64));
-                    total_active_time.push(Bar::new(x, stats.total_active_time_seconds as f64));
-                    total_mouse_time.push(Bar::new(x, stats.total_mouse_movement_time as f64));
+                    total_keystrokes.push(Bar::new(x, stats.total_keystrokes as f64).name("Keystrokes"));
+                    total_mouse_clicks.push(Bar::new(x, stats.total_mouse_clicks as f64).name("Mouse Clicks"));
+                    total_movement.push(Bar::new(x, stats.total_mouse_movement as f64).name("Movement"));
+                    total_click_movement.push(Bar::new(x, stats.total_mouse_click_movement as f64).name("Click Movement"));
+                    total_active_time.push(Bar::new(x, stats.total_active_time_seconds as f64).name("Active Time"));
+                    total_mouse_time.push(Bar::new(x, stats.total_mouse_movement_time as f64).name("Active Mouse Time"));
                 }
                 None => continue
             }
         };
 
-        let mouse_clicks_chart = create_bar_chart(total_mouse_clicks, "Mouse Clicks", None);
-        let keystrokes_chart = create_bar_chart(total_keystrokes, "Keystrokes", Some(&mouse_clicks_chart));
+        let mouse_clicks_chart = create_bar_chart(total_mouse_clicks,
+                                                  "Mouse Clicks",
+                                                  Color32::from_rgb(0, 202, 252),
+                                                  None,
+                                                  false);
+        let keystrokes_chart = create_bar_chart(total_keystrokes,
+                                                "Keystrokes",
+                                                Color32::from_rgb(221, 18, 101),
+                                                Some(&mouse_clicks_chart),
+                                                false);
 
-        let movement_chart = create_bar_chart(total_movement, "Movement", None);
-        let click_movement_chart = create_bar_chart(total_click_movement, "Click Movement", Some(&movement_chart));
+        let movement_chart = create_bar_chart(total_movement,
+                                              "Movement",
+                                              Color32::from_rgb(206, 145, 254),
+                                              None,
+                                              false);
+        let click_movement_chart = create_bar_chart(total_click_movement,
+                                                    "Click Movement",
+                                                    Color32::from_rgb(255, 195, 29),
+                                                    Some(&movement_chart),
+                                                    false);
 
-        let active_time_chart = create_bar_chart(total_active_time, "Active Time", None);
-        let mouse_time_chart = create_bar_chart(total_mouse_time, "Mouse Time", Some(&active_time_chart));
+        let active_time_chart = create_bar_chart(total_active_time,
+                                                 "Active Time",
+                                                 Color32::from_rgb(220, 120, 244),
+                                                 None,
+                                                 true);
+        let mouse_time_chart = create_bar_chart(total_mouse_time,
+                                                "Mouse Time",
+                                                Color32::from_rgb(255, 128, 7),
+                                                Some(&active_time_chart),
+                                                true);
 
         PlotData {
             key_strokes: vec![mouse_clicks_chart, keystrokes_chart],
@@ -153,14 +192,14 @@ impl StatsTab {
 
     fn configure_plot_settings(plot: Plot) -> Plot {
         plot.include_y(0.0)
+            .label_formatter(StatsTab::general_label_formatter)
             .allow_boxed_zoom(false)
             .allow_drag(true)
             .x_axis_formatter(StatsTab::x_axis_formatter)
-            .label_formatter(StatsTab::label_formatter)
             .legend(Legend::default())
     }
 
-    fn label_formatter(plot_points_name: &str, plot_point: &PlotPoint) -> String {
+    fn general_label_formatter(plot_points_name: &str, plot_point: &PlotPoint) -> String {
         let date = match NaiveDate::from_num_days_from_ce_opt(plot_point.x as i32) {
             Some(value) => value,
             None => {
@@ -176,6 +215,35 @@ impl StatsTab {
                     plot_points_name,
                     date,
                     plot_point.y)
+        }
+    }
+
+    fn box_chart_element_formatter(bar: &Bar, chart: &BarChart) -> String {
+        let date = match NaiveDate::from_num_days_from_ce_opt(bar.argument as i32) {
+            Some(value) => value,
+            None => {
+                return format!("DATE ERR");
+            }
+        };
+
+        let date = "Date:     ".to_owned() + &StatsTab::naive_date_to_string(&date);
+        format!("{}\n{}\n{}", bar.name, date, bar.value)
+    }
+
+    fn active_time_element_formatter(bar: &Bar, chart: &BarChart) -> String {
+        match NaiveDate::from_num_days_from_ce_opt(bar.argument as i32) {
+            Some(date) => {
+                let date = "Date:     ".to_owned() + &StatsTab::naive_date_to_string(&date);
+                format!("{}\n{}\nValue:    {}hr {}min {}s",
+                        bar.name,
+                        date,
+                        format!("{:.0}", (bar.value / 60.0) / 60.0),
+                        format!("{:.0}", (bar.value / 60.0) % 60.0),
+                        format!("{:.0}", bar.value % 60.0))
+            },
+            None => {
+                return format!("DATE ERR");
+            }
         }
     }
 
