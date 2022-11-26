@@ -1,8 +1,6 @@
 use eframe::egui;
 use egui::*;
-use std::fs;
 
-use crate::workrave;
 use crate::stats;
 use crate::settings;
 use std::collections::BTreeMap;

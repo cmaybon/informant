@@ -4,8 +4,6 @@ use egui::*;
 use plot::{Plot, PlotPoint, Legend, Bar, BarChart};
 use chrono::{NaiveDate, Datelike};
 use std::ops::RangeInclusive;
-use crate::workrave::{WorkraveDay, WorkraveHistory};
-use crate::settings::Settings;
 
 pub struct StatsTab {
     pub workrave_history: Option<workrave::WorkraveHistory>,
