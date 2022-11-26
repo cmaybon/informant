@@ -2,12 +2,15 @@ use crate::{workrave};
 use eframe::egui;
 use egui::*;
 use plot::{Plot, PlotPoint, Legend, Bar, BarChart};
-use crate::workrave::{WorkraveDay};
 use chrono::{NaiveDate, Datelike};
 use std::ops::RangeInclusive;
+use crate::workrave::{WorkraveDay, WorkraveHistory};
+use crate::settings::Settings;
 
 pub struct StatsTab {
+    pub workrave_history: Option<workrave::WorkraveHistory>,
     pub current_day: Option<workrave::WorkraveDay>,
+    first_history_load: bool,
 }
 
 struct PlotData {
@@ -17,26 +20,40 @@ struct PlotData {
 }
 
 impl StatsTab {
-    pub fn ui(&mut self, ui: &mut Ui, workrave_history: &Option<workrave::WorkraveHistory>, frame: &eframe::Frame) -> Response {
-        ui.vertical(|ui| {
-            let history = match workrave_history {
-                Some(data) => data,
-                None => {
-                    self.no_history_data_ui(ui);
-                    return;
-                }
-            };
+    pub fn default() -> Self {
+        Self {
+            workrave_history: None,
+            current_day: None,
+            first_history_load: true,
+        }
+    }
 
+    pub fn ui(&mut self, ui: &mut Ui, historystats_path: &Option<String>, frame: &eframe::Frame) -> Response {
+        if let Some(path) = historystats_path {
+            if Option::is_none(&self.workrave_history) && self.first_history_load {
+                self.workrave_history = workrave::WorkraveHistory::load_historystats(path);
+                self.first_history_load = false;
+            }
+        }
+
+        let history = match &self.workrave_history {
+            Some(data) => data,
+            None => {
+                return self.no_history_data_ui(ui, historystats_path);
+            }
+        };
+
+        ui.vertical(|ui| {
             ui.vertical(|ui| {
                 let link_axis_group = plot::LinkedAxisGroup::new(true, false);
 
-                let plot_width = frame.info().window_info.size.x - 15.0;
-                let small_plot_width = &plot_width * 0.5;
+                let large_plot_size = egui::Vec2::new(frame.info().window_info.size.x - 15.0, 600.0);
+                let small_plot_size = egui::Vec2::new(&large_plot_size.x * 0.5, 500.0);
                 let plot_data = StatsTab::build_plot_data(&history);
 
                 let mut keystrokes_plot = Plot::new("keystrokes_plot")
-                    .height(600.0)
-                    .width(plot_width)
+                    .width(large_plot_size.x)
+                    .height(large_plot_size.y)
                     .link_axis(link_axis_group.clone());
                 keystrokes_plot = StatsTab::configure_plot_settings(keystrokes_plot);
 
@@ -44,20 +61,12 @@ impl StatsTab {
                     for chart in plot_data.key_strokes {
                         plot_ui.bar_chart(chart);
                     }
-
-                    // TODO use similar to handle changing selected day
-                    // if plot_ui.plot_clicked() {
-                    //     match plot_ui.pointer_coordinate() {
-                    //         Some(value) => println!("{}, {}", value.x, value.y),
-                    //         None => (),
-                    //     }
-                    // }
                 });
 
                 ui.horizontal(|ui| {
                     let mut movement_plot = Plot::new("movement_plot")
-                        .height(500.0)
-                        .width(small_plot_width)
+                        .width(small_plot_size.x)
+                        .height(small_plot_size.y)
                         .link_axis(link_axis_group.clone());
                     movement_plot = StatsTab::configure_plot_settings(movement_plot);
                     movement_plot.show(ui, |plot_ui| {
@@ -68,8 +77,8 @@ impl StatsTab {
 
                     let
                         mut time_plot = Plot::new("time_plot")
-                        .height(500.0)
-                        .width(small_plot_width)
+                        .width(small_plot_size.x)
+                        .height(small_plot_size.y)
                         .link_axis(link_axis_group.clone());
                     time_plot = StatsTab::configure_plot_settings(time_plot);
                     time_plot.show(ui, |plot_ui| {
@@ -94,9 +103,17 @@ impl StatsTab {
         }).response
     }
 
-    fn no_history_data_ui(&mut self, ui: &mut Ui) -> Response {
+    fn no_history_data_ui(&mut self, ui: &mut Ui, path: &Option<String>) -> Response {
         ui.vertical_centered(|ui| {
             ui.heading("\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nNo history data loaded");
+            if ui.button("Try load data").clicked() {
+                match path {
+                    Some(s) => {
+                        self.workrave_history = workrave::WorkraveHistory::load_historystats(s);
+                    },
+                    None => println!("Failed to load data, no path given"),
+                };
+            }
         }).response
     }
 

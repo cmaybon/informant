@@ -104,6 +104,19 @@ impl WorkraveHistory {
         }
     }
 
+    pub fn load_historystats(path: &str) -> Option<WorkraveHistory> {
+        if !WorkraveHistory::is_file_valid(&path) {
+            return None
+        };
+
+        let valid_file = match fs::File::open(path) {
+            Ok(file) => file,
+            Err(_) => panic!("Failed to open historystats")
+        };
+
+        Some(WorkraveHistory::load_historystats_file(&valid_file))
+    }
+
     pub fn load_historystats_file(file: &fs::File) -> WorkraveHistory {
         let reader = BufReader::new(file);
 

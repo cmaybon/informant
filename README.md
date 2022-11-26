@@ -1,6 +1,6 @@
 # Informant
 
-A program to visual activity statistics produced by [Workrave](https://github.com/rcaelers/workrave).  
+A program to visualise activity statistics produced by [Workrave](https://github.com/rcaelers/workrave).  
 Written in Rust using [egui](https://github.com/emilk/egui).
 
 ![preview](docs/preview.png)

@@ -118,11 +118,12 @@ impl SettingsTab {
                         .set_file_name(workrave::WORKRAVE_HISTORYSTATS_FILENAME.as_str())
                         .pick_file() {
                         let path = path.display().to_string();
-                        if workrave::WorkraveHistory::is_file_valid(&path) {
-                            self.settings.workrave_historystats_path = Some(path);
-                        } else {
-                            self.settings.workrave_historystats_path = None;
-                        }
+                        self.settings.workrave_historystats_path = Some(path);
+                        // if workrave::WorkraveHistory::is_file_valid(&path) {
+                        //     self.settings.workrave_historystats_path = Some(path);
+                        // } else {
+                        //     self.settings.workrave_historystats_path = None;
+                        // }
                     }
                 }
             });
