@@ -1,3 +1,9 @@
+# 0.1.2
+## Changes
+- Added an `exe` icon on Windows
+- Added application icon
+
+---
 # 0.1.1
 ## Features
 - When no `historystats` path is set attempts to use `C:\Users\<username>\AppData\Roaming\Workrave`
