@@ -119,11 +119,6 @@ impl SettingsTab {
                         .pick_file() {
                         let path = path.display().to_string();
                         self.settings.workrave_historystats_path = Some(path);
-                        // if workrave::WorkraveHistory::is_file_valid(&path) {
-                        //     self.settings.workrave_historystats_path = Some(path);
-                        // } else {
-                        //     self.settings.workrave_historystats_path = None;
-                        // }
                     }
                 }
             });

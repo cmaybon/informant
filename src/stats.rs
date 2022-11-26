@@ -43,24 +43,37 @@ impl StatsTab {
             }
         };
 
-        ui.vertical(|ui| {
+        ui.vertical_centered(|ui| {
+            let link_axis_group = plot::LinkedAxisGroup::new(true, false);
+
+            let window_size = frame.info().window_info.size;
+            let large_plot_size = egui::Vec2::new(window_size.x - 15.0,
+                                                  (window_size.y - 15.0) * 0.5);
+            let small_plot_size = egui::Vec2::new((&large_plot_size.x - 10.0) * 0.5,
+                                                  window_size.y * 0.40);
+            let plot_data = StatsTab::build_plot_data(&history);
+
+            ui.heading("Keystrokes");
+            let mut keystrokes_plot = Plot::new("keystrokes_plot")
+                .width(large_plot_size.x)
+                .height(large_plot_size.y)
+                .link_axis(link_axis_group.clone());
+            keystrokes_plot = StatsTab::configure_plot_settings(keystrokes_plot);
+
+            keystrokes_plot.show(ui, |plot_ui| {
+                for chart in plot_data.key_strokes {
+                    plot_ui.bar_chart(chart);
+                }
+            });
+
             ui.vertical(|ui| {
-                let link_axis_group = plot::LinkedAxisGroup::new(true, false);
-
-                let large_plot_size = egui::Vec2::new(frame.info().window_info.size.x - 15.0, 600.0);
-                let small_plot_size = egui::Vec2::new(&large_plot_size.x * 0.5, 500.0);
-                let plot_data = StatsTab::build_plot_data(&history);
-
-                let mut keystrokes_plot = Plot::new("keystrokes_plot")
-                    .width(large_plot_size.x)
-                    .height(large_plot_size.y)
-                    .link_axis(link_axis_group.clone());
-                keystrokes_plot = StatsTab::configure_plot_settings(keystrokes_plot);
-
-                keystrokes_plot.show(ui, |plot_ui| {
-                    for chart in plot_data.key_strokes {
-                        plot_ui.bar_chart(chart);
-                    }
+                ui.columns(2, |columns| {
+                    columns[0].vertical_centered(|ui| {
+                        ui.heading("Mouse Movement");
+                    });
+                    columns[1].vertical_centered(|ui| {
+                        ui.heading("Activity Time");
+                    });
                 });
 
                 ui.horizontal(|ui| {
@@ -75,8 +88,7 @@ impl StatsTab {
                         }
                     });
 
-                    let
-                        mut time_plot = Plot::new("time_plot")
+                    let mut time_plot = Plot::new("time_plot")
                         .width(small_plot_size.x)
                         .height(small_plot_size.y)
                         .link_axis(link_axis_group.clone());
@@ -87,18 +99,6 @@ impl StatsTab {
                         }
                     });
                 });
-            });
-
-            let day: &WorkraveDay = history.days.get(&NaiveDate::from_num_days_from_ce_opt(738436 + 7).unwrap()).unwrap();
-            ui.vertical_centered(|ui| {
-                ui.heading("Current Day's Stats");
-                ui.separator();
-                ui.label(format!("Total active time: {}", day.stats.total_active_time_seconds));
-                ui.label(format!("Total mouse movement: {}", day.stats.total_mouse_movement));
-                ui.label(format!("Total click mouse movement: {}", day.stats.total_mouse_click_movement));
-                ui.label(format!("Total mouse time: {}", day.stats.total_mouse_movement_time));
-                ui.label(format!("Total mouse clicks: {}", day.stats.total_mouse_clicks));
-                ui.label(format!("Total keystrokes: {}", day.stats.total_keystrokes));
             });
         }).response
     }

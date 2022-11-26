@@ -8,8 +8,7 @@ fn main() {
     tracing_subscriber::fmt::init();
 
     let mut options = eframe::NativeOptions::default();
-    options.min_window_size = Some(Vec2::new(1600.0, 900.0));
-    // options.resizable = false;
+    options.min_window_size = Some(Vec2::new(1200.0, 720.0));
     eframe::run_native(
         "Informant",
         options,
