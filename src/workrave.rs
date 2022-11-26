@@ -4,6 +4,8 @@ use std::fs;
 use std::io::{BufReader, BufRead};
 
 pub const WORKRAVE_HISTORYSTATS_FILENAME: &str = "historystats";
+pub const WORKRAVE_TODAYSTATS_FILENAME: &str = "todaystats";
+pub const WORKRAVE_MOVEMENT_TO_METERS: f32 = 4288.0;
 
 #[derive(Debug)]
 pub struct WorkraveDay {
@@ -20,14 +22,19 @@ pub struct DatetimeRange {
 #[derive(PartialEq, Debug, Copy, Clone)]
 pub struct InputStats {
     pub total_active_time_seconds: u64,
-    pub total_mouse_movement: u64,
-    pub total_mouse_click_movement: u64,
+    pub total_mouse_movement: f32,
+    pub total_mouse_click_movement: f32,
     pub total_mouse_movement_time: u64,
     pub total_mouse_clicks: u64,
     pub total_keystrokes: u64,
 }
 
 impl WorkraveDay {
+    fn round(x: f32, places: u32) -> f32 {
+        let power = 10_i32.pow(places);
+        (x * power as f32).round() / power as f32
+    }
+
     fn convert_date_line(line: &str) -> DatetimeRange {
         let line: &str = &line[1..];
         let split_parsed: Vec<u32> = line.trim().split(" ").map(|s| s.parse().unwrap()).collect();
@@ -56,8 +63,8 @@ impl WorkraveDay {
         let split_parsed: Vec<u64> = line.trim().split(" ").map(|s| s.parse().unwrap()).collect();
         InputStats {
             total_active_time_seconds: split_parsed[1],
-            total_mouse_movement: split_parsed[2],
-            total_mouse_click_movement: split_parsed[3],
+            total_mouse_movement: WorkraveDay::round(split_parsed[2] as f32 / WORKRAVE_MOVEMENT_TO_METERS, 2),
+            total_mouse_click_movement: WorkraveDay::round(split_parsed[3] as f32 / WORKRAVE_MOVEMENT_TO_METERS, 2),
             total_mouse_movement_time: split_parsed[4],
             total_mouse_clicks: split_parsed[5],
             total_keystrokes: split_parsed[6],
@@ -153,6 +160,17 @@ impl WorkraveHistory {
             days
         }
     }
+
+    pub fn add_todaystats(&mut self, path: &str) {
+        match WorkraveHistory::load_historystats(path) {
+            Some(stats) => {
+                self.days.extend(stats.days);
+            },
+            None => {
+                println!("Failed to load todaystats")
+            }
+        }
+    }
 }
 
 
@@ -178,8 +196,8 @@ mod tests {
         let line = "m 6 338 28584 40231 29 104 33 ";
         let stats = InputStats {
             total_active_time_seconds: 338,
-            total_mouse_movement: 28584,
-            total_mouse_click_movement: 40231,
+            total_mouse_movement: 6.67,
+            total_mouse_click_movement: 9.38,
             total_mouse_movement_time: 29,
             total_mouse_clicks: 104,
             total_keystrokes: 33,

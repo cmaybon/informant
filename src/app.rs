@@ -50,7 +50,10 @@ impl eframe::App for Informant {
         egui::CentralPanel::default().show(ctx, |ui| {
             match self.current_tab {
                 Tab::Stats => {
-                    self.stats_tab.ui(ui, &self.settings_tab.settings.workrave_historystats_path, &frame);
+                    self.stats_tab.ui(ui,
+                                      &self.settings_tab.settings.workrave_historystats_path,
+                                      &self.settings_tab.settings.workrave_todaystats_path,
+                                      &frame);
                 }
                 Tab::Settings => {
                     self.settings_tab.ui(ui);

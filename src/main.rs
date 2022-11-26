@@ -4,7 +4,8 @@ use informant::Informant;
 use egui::Vec2;
 
 fn load_app_icon_data() -> eframe::IconData {
-    let icon = image::open("assets/icon.png")
+    let icon_bytes = include_bytes!("../assets/icon.png");
+    let icon = image::load_from_memory(icon_bytes)
         .expect("Failed to open icon path")
         .into_rgba8();
     let (icon_width, icon_height) = icon.dimensions();

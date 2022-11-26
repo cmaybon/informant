@@ -26,10 +26,15 @@ impl StatsTab {
         }
     }
 
-    pub fn ui(&mut self, ui: &mut Ui, historystats_path: &Option<String>, frame: &eframe::Frame) -> Response {
+    pub fn ui(&mut self, ui: &mut Ui, historystats_path: &Option<String>, todaystats_path: &Option<String>, frame: &eframe::Frame) -> Response {
         if let Some(path) = historystats_path {
             if Option::is_none(&self.workrave_history) && self.first_history_load {
                 self.workrave_history = workrave::WorkraveHistory::load_historystats(path);
+                if let Some(today_path) = todaystats_path {
+                    self.workrave_history.as_mut().unwrap().add_todaystats(today_path);
+                    println!("Loaded todaystats");
+                }
+
                 self.first_history_load = false;
             }
         }
@@ -149,6 +154,7 @@ impl StatsTab {
                 Some(day) => {
                     let x = date.num_days_from_ce() as f64;
                     let stats = &day.stats;
+
                     total_keystrokes.push(Bar::new(x, stats.total_keystrokes as f64).name("Keystrokes"));
                     total_mouse_clicks.push(Bar::new(x, stats.total_mouse_clicks as f64).name("Mouse Clicks"));
                     total_movement.push(Bar::new(x, stats.total_mouse_movement as f64).name("Movement"));
@@ -243,7 +249,7 @@ impl StatsTab {
         };
 
         let date = "Date:     ".to_owned() + &StatsTab::naive_date_to_string(&date);
-        format!("{}\n{}\n{}", bar.name, date, bar.value)
+        format!("{}\n{}\n{:.2}", bar.name, date, bar.value)
     }
 
     fn active_time_element_formatter(bar: &Bar, _chart: &BarChart) -> String {
