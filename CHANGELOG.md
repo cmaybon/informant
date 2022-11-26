@@ -1,4 +1,4 @@
-# v0.1.1
+# 0.1.1
 ## Features
 - When no `historystats` path is set attempts to use `C:\Users\<username>\AppData\Roaming\Workrave`
 - `historystats` is now attempted to be loaded on launch
