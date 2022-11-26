@@ -1,10 +1,12 @@
-# v0.1.1 (WIP)
+# v0.1.1
 ## Features
 - When no `historystats` path is set attempts to use `C:\Users\<username>\AppData\Roaming\Workrave`
-- `historystats` is loaded on launch
-!- `historystats` is now cached once loaded
-!- Add button to `StatsTab` to manually reload `historystats`
+- `historystats` is now attempted to be loaded on launch
+- `historystats` is now cached once loaded
+- Added button to `StatsTab` to reload `historystats` when loads fail 
 
 ## Changes
-- Fixed all compiler warnings
-!- Removed current day stats placeholder UI
+- Removed current day stats placeholder UI
+- Plots now scale with screen size properly
+- Added headings above all plots
+- Removed `Load Stats` button from top panel
