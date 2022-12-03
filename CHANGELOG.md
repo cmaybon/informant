@@ -1,3 +1,12 @@
+# 0.1.4
+## Fixes
+- Fixed issue where dates where 1 month behind (fixing issue ["X Axis label displays the incorrect month"](https://github.com/cmaybon/informant/issues/4))
+
+## Changes
+- Added some unit tests to `stats.rs`
+
+---
+
 # 0.1.3
 ## Features
 - Added loading of `todaystats` to show today's stats
