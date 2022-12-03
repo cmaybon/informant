@@ -153,7 +153,6 @@ impl StatsTab {
             match history.days.get(date) {
                 Some(day) => {
                     let x = date.num_days_from_ce() as f64;
-                    println!("{} -> {}", date, x);
                     let stats = &day.stats;
 
                     total_keystrokes.push(Bar::new(x, stats.total_keystrokes as f64).name("Keystrokes"));

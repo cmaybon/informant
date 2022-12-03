@@ -39,14 +39,15 @@ impl WorkraveDay {
         let line: &str = &line[1..];
         let split_parsed: Vec<u32> = line.trim().split(" ").map(|s| s.parse().unwrap()).collect();
 
+        // Month is indexed from 0
         let start = Local.with_ymd_and_hms(split_parsed[2] as i32 + 1900,
-                                           split_parsed[1],
+                                           split_parsed[1] + 1,
                                            split_parsed[0],
                                            split_parsed[3],
                                            split_parsed[4],
                                            0).unwrap();
         let end = Local.with_ymd_and_hms(split_parsed[7] as i32 + 1900,
-                                         split_parsed[6],
+                                         split_parsed[6] + 1,
                                          split_parsed[5],
                                          split_parsed[8],
                                          split_parsed[9],
@@ -181,8 +182,8 @@ mod tests {
     #[test]
     fn test_convert_date_line() {
         let line = "D 8 10 122 22 39 8 10 122 22 44";
-        let datetime_start = Local.with_ymd_and_hms(2022, 10, 8, 22, 39, 0).unwrap();
-        let datetime_end = Local.with_ymd_and_hms(2022, 10, 8, 22, 44, 0).unwrap();
+        let datetime_start = Local.with_ymd_and_hms(2022, 11, 8, 22, 39, 0).unwrap();
+        let datetime_end = Local.with_ymd_and_hms(2022, 11, 8, 22, 44, 0).unwrap();
         let date_range = DatetimeRange {
             start: datetime_start,
             end: datetime_end,
@@ -204,12 +205,5 @@ mod tests {
         };
 
         assert_eq!(WorkraveDay::convert_stats_line(&line), stats);
-    }
-
-    #[test]
-    fn test_build_workrave_history() {
-        // let expected = WorkraveHistory {}
-
-        // assert_eq!()
     }
 }
