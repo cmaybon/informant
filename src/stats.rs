@@ -153,6 +153,7 @@ impl StatsTab {
             match history.days.get(date) {
                 Some(day) => {
                     let x = date.num_days_from_ce() as f64;
+                    println!("{} -> {}", date, x);
                     let stats = &day.stats;
 
                     total_keystrokes.push(Bar::new(x, stats.total_keystrokes as f64).name("Keystrokes"));
@@ -280,9 +281,42 @@ impl StatsTab {
     }
 
     fn naive_date_to_string(date: &NaiveDate) -> String {
-        format!("{}-{}-{}",
+        format!("{:02}-{}-{}",
                 date.day(),
                 date.month(),
                 date.year())
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn general_label_formatter_invalid_num_days() {
+        assert_eq!(StatsTab::general_label_formatter("", &PlotPoint {
+            x: 100_000_000.0,
+            y: 0.0
+        }),
+        "DATE ERR");
+    }
+
+    #[test]
+    fn general_label_formatter_no_plot_name() {
+        assert_eq!(StatsTab::general_label_formatter("", &PlotPoint {
+            x: 738492.0,
+            y: 0.0
+        }), "Date:     03-12-2022");
+    }
+
+    #[test]
+    fn general_label_formatter() {
+        assert_eq!(StatsTab::general_label_formatter("Keystrokes", &PlotPoint {
+            x: 738492.0,
+            y: 27.0
+        }),
+        "Keystrokes\n\
+        Date:     03-12-2022\n\
+        Value:    27");
     }
 }
